@@ -63,4 +63,4 @@ MIT License – frei verwendbar, veränderbar und weiterggebbar.
 
 ## Hinweis
 
-Der Code wurde vollständig mit KI geeriert. Auf meinem System wird alles genau so wie ich es haben möchte umgesetzt. Das ist mein erstes Projekt in GitHub. Nennt es gerne VibeCoding, aber seid bitte freundlich.
+Der Code wurde vollständig mit KI geeriert. Es funktioniert bei mir im Test wunderbar. Ich werde ab sofort testen. Das ist mein erstes Projekt in GitHub. Nennt es gerne VibeCoding, aber seid bitte freundlich.
