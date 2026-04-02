@@ -47,6 +47,8 @@ Nach der Installation erscheint **„PDF zusammenfügen"** direkt im Rechtsklick
 4. Speicherort wählen
 5. Fertig – alle Seiten werden automatisch auf A4 normalisiert
 
+Es empfielt sich die Installation von "PDF Arranger" um ggf. einzelne Seiten zu drehen oder die Reihenfolge nachträglich zu optimieren.
+
 ### Deinstallation
 
 ```bash
