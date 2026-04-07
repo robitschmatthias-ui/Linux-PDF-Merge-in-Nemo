@@ -33,7 +33,7 @@ Das Installationsskript kümmert sich um alles. Folgende Pakete werden automatis
 
 ```bash
 git clone https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
-cd Linux-Programme
+cd Linux-PDF-Merge-in-Nemo
 sudo bash install.sh
 ```
 
