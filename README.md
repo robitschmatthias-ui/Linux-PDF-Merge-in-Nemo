@@ -32,7 +32,7 @@ Das Installationsskript kümmert sich um alles. Folgende Pakete werden automatis
 ### Installation
 
 ```bash
-git clone https://github.com/robitschmatthias-ui/Linux-Programme.git
+git clone https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
 cd Linux-Programme
 sudo bash install.sh
 ```
