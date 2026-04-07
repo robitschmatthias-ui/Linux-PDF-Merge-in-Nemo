@@ -1,4 +1,4 @@
-# Linux-Programme
+# PDF Merge in Nemo
 
 Sammlung von Bash-Skripten für den täglichen Gebrauch unter Linux (Ubuntu / Linux Mint).
 
