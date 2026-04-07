@@ -4,6 +4,14 @@
 
 TMPDIR=$(mktemp -d)
 
+# Abhängigkeiten prüfen
+for CMD in libreoffice pdftk img2pdf zenity gs yad; do
+    if ! command -v "$CMD" &>/dev/null; then
+        zenity --error --title="Fehler" --text="$CMD ist nicht installiert.\n\nBitte install.sh ausführen."
+        exit 1
+    fi
+done
+
 # Sperrdateien (LibreOffice .~lock.*#) und nicht unterstützte Typen herausfiltern
 ORDERED_FILES=()
 for F in "$@"; do
