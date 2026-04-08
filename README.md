@@ -1,22 +1,22 @@
 # PDF Merge in Nemo
 
-Sammlung von Bash-Skripten für den täglichen Gebrauch unter Linux (Ubuntu / Linux Mint).
+Bash-Skripte zum Zusammenfügen von Dateien zu PDF direkt aus dem Nemo-Dateimanager (Linux Mint / Ubuntu).
 
 ---
 
-## PDF zusammenfügen
+## Features
 
-> Mehrere Dateien unterschiedlicher Formate per Rechtsklick zu einem einheitlichen A4-PDF zusammenführen.
-
-### Features
-
+- **Zwei Merge-Modi per Rechtsklick:**
+  - **PDF Quick Merge** – sofort zusammenfügen, keine weiteren Fragen
+  - **PDF Advanced Merge** – Reihenfolge per Drag & Drop festlegen, Seitengröße und Ausrichtung wählen
 - **Unterstützte Formate:** PDF, Bilder (JPG, PNG, TIFF, BMP, WebP, GIF), Office-Dokumente (ODT, ODS, ODP, DOCX, XLSX, PPTX, DOC)
-- **Reihenfolge per GUI festlegen** – Dateien in einem Dialog mit ⬆/⬇-Buttons sortieren
-- **A4-Normalisierung** – alle Seiten werden automatisch auf einheitliches A4-Format skaliert, egal ob Scan, Foto oder Dokument
-- **Nemo-Integration** – direkt per Rechtsklick im Dateimanager aufrufbar
-- **Automatischer Installer** – prüft und installiert alle Abhängigkeiten selbstständig
+- **A4-Anpassung** (Advanced) – große Seiten werden auf A4 verkleinert (300 DPI), kleine Bilder unter 200 DPI bleiben in Originalgröße und werden zentriert
+- **Ausrichtung** (Advanced) – Original beibehalten, Hochformat oder Querformat erzwingen
+- **PDF nach Merge öffnen** (Advanced) – optionale Checkbox um das Ergebnis direkt im Standard-PDF-Programm zu bearbeiten
+- **Eigenes Icon** – blaues PDF-Merge-Icon im Kontextmenü
+- **Automatischer Installer** – prüft und installiert alle Abhängigkeiten
 
-### Voraussetzungen
+## Voraussetzungen
 
 Das Installationsskript kümmert sich um alles. Folgende Pakete werden automatisch installiert:
 
@@ -26,10 +26,12 @@ Das Installationsskript kümmert sich um alles. Folgende Pakete werden automatis
 | `pdftk` | Zusammenfügen der PDF-Dateien |
 | `img2pdf` | Konvertierung von Bildern |
 | `zenity` | GUI-Dialoge |
-| `yad` | Sortier-Dialog mit Buttons |
-| `ghostscript` | A4-Normalisierung |
+| `yad` | Erweiterte Dialoge |
+| `ghostscript` | Seitengrößen-Anpassung und Ausrichtung |
 
-### Installation
+Python 3 mit GTK3 (vorinstalliert auf Ubuntu/Linux Mint) wird für den Advanced-Dialog verwendet.
+
+## Installation
 
 ```bash
 git clone https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
@@ -37,23 +39,39 @@ cd Linux-PDF-Merge-in-Nemo
 sudo bash install.sh
 ```
 
-Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installiert nur die fehlenden Pakete. Nach der Installation erscheint **„PDF zusammenfügen"** direkt im Rechtsklick-Menü von Nemo.
+Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installiert nur die fehlenden Pakete. Nach der Installation erscheinen zwei Einträge im Rechtsklick-Menü von Nemo.
 
-### Verwendung
+## Verwendung
 
-1. Dateien in Nemo markieren (PDF, Bilder, Office-Dokumente – auch gemischt)
-2. Rechtsklick → **PDF zusammenfügen**
-3. Reihenfolge per Dialog festlegen
+### PDF Quick Merge
+
+1. Dateien in Nemo markieren
+2. Rechtsklick → **PDF Quick Merge**
+3. Speicherort wählen
+4. Fertig
+
+### PDF Advanced Merge
+
+1. Dateien in Nemo markieren
+2. Rechtsklick → **PDF Advanced Merge**
+3. Im Dialog:
+   - Dateien per **Drag & Drop** in die gewünschte Reihenfolge ziehen
+   - **Seitengröße** wählen (Original oder A4-Anpassung)
+   - **Ausrichtung** wählen (Original, Hochformat, Querformat)
+   - Optional: **PDF nach Merge öffnen** ankreuzen
 4. Speicherort wählen
-5. Fertig – alle Seiten werden automatisch auf A4 normalisiert
+5. Fertig
 
-Es empfiehlt sich die Installation von "PDF Arranger" um ggf. einzelne Seiten zu drehen oder die Reihenfolge nachträglich zu optimieren.
+> Tipp: Mit „PDF Arranger" (separat installierbar) können einzelne Seiten nachträglich gedreht oder verschoben werden.
 
-### Deinstallation
+## Deinstallation
 
 ```bash
 rm ~/.local/bin/"PDF zusammenfügen.sh"
-rm ~/.local/share/nemo/actions/pdf-zusammenfuegen.nemo_action
+rm ~/.local/bin/advanced_dialog.py
+rm ~/.local/share/icons/pdf-merge-icon.svg
+rm ~/.local/share/nemo/actions/pdf-quick-merge.nemo_action
+rm ~/.local/share/nemo/actions/pdf-advanced-merge.nemo_action
 nemo -q && nemo &
 ```
 
@@ -65,4 +83,4 @@ MIT License – frei verwendbar, veränderbar und weitergebbar.
 
 ## Hinweis
 
-Der Code wurde vollständig mit KI generiert. Es funktioniert bei mir im Test wunderbar. Ich werde ab sofort testen. Das ist mein erstes Projekt in GitHub. Nennt es gerne VibeCoding, aber seid bitte freundlich.
+Der Code wurde vollständig mit KI generiert. Es funktioniert bei mir im Test wunderbar. Das ist mein erstes Projekt in GitHub. Nennt es gerne VibeCoding, aber seid bitte freundlich.
