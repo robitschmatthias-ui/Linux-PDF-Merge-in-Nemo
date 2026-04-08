@@ -34,7 +34,7 @@ Python 3 mit GTK3 (vorinstalliert auf Ubuntu/Linux Mint) wird für den Advanced-
 ## Installation
 
 ```bash
-git clone https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
+git clone -b feature/v2-improvements https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
 cd Linux-PDF-Merge-in-Nemo
 sudo bash install.sh
 ```
