@@ -127,13 +127,89 @@ zusammenfuegen() {
 
 quick_merge() {
     speicherort_waehlen
-    konvertiere_dateien
-    zusammenfuegen
 
-    # Quick: direkt kopieren, kein Ghostscript
-    cp "$MERGED" "$OUTPUT"
+    TOTAL=${#ORDERED_FILES[@]}
+    (
+    PDF_LIST=()
+    ERRORS=()
+    COUNTER=0
 
-    if [ $? -eq 0 ]; then
+    for IDX in "${!ORDERED_FILES[@]}"; do
+        FILE="${ORDERED_FILES[$IDX]}"
+        CURRENT=$((IDX + 1))
+        echo $(( CURRENT * 90 / TOTAL ))
+        echo "# Datei $CURRENT von $TOTAL: $(basename "$FILE")"
+
+        EXT_LOWER=$(echo "${FILE##*.}" | tr '[:upper:]' '[:lower:]')
+        case "$EXT_LOWER" in
+            pdf)
+                PDF_LIST+=("$FILE")
+                ;;
+            doc|docx|odt|ods|odp|pptx|xlsx)
+                COUNTER=$((COUNTER+1))
+                BASENAME=$(basename "${FILE%.*}")
+                LO_OUT="$TMPDIR/$BASENAME.pdf"
+                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+                libreoffice --headless --convert-to pdf "$FILE" --outdir "$TMPDIR" 2>/dev/null
+                if [ -f "$LO_OUT" ]; then
+                    mv "$LO_OUT" "$CONVERTED"
+                    PDF_LIST+=("$CONVERTED")
+                else
+                    ERRORS+=("$(basename "$FILE")")
+                fi
+                ;;
+            jpg|jpeg|png|gif|tiff|tif|bmp|webp)
+                COUNTER=$((COUNTER+1))
+                BASENAME=$(basename "${FILE%.*}")
+                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+                img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+                if [ -f "$CONVERTED" ]; then
+                    PDF_LIST+=("$CONVERTED")
+                else
+                    ERRORS+=("$(basename "$FILE")")
+                fi
+                ;;
+            *)
+                FILETYPE=$(file --mime-type -b "$FILE")
+                case "$FILETYPE" in
+                    image/jpeg|image/png|image/gif|image/tiff|image/bmp|image/webp)
+                        COUNTER=$((COUNTER+1))
+                        BASENAME=$(basename "$FILE")
+                        CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+                        img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+                        if [ -f "$CONVERTED" ]; then
+                            PDF_LIST+=("$CONVERTED")
+                        else
+                            ERRORS+=("$(basename "$FILE")")
+                        fi
+                        ;;
+                    application/pdf)
+                        PDF_LIST+=("$FILE")
+                        ;;
+                    *)
+                        ERRORS+=("$(basename "$FILE") [nicht unterstützt: $FILETYPE]")
+                        ;;
+                esac
+                ;;
+        esac
+    done
+
+    echo "95"
+    echo "# PDF wird zusammengefügt..."
+
+    if [ ${#PDF_LIST[@]} -gt 0 ]; then
+        pdftk "${PDF_LIST[@]}" cat output "$OUTPUT"
+    fi
+    echo "100"
+    ) | zenity --progress \
+        --title="PDF Quick Merge" \
+        --text="Dateien werden verarbeitet..." \
+        --percentage=0 \
+        --auto-close \
+        --no-cancel \
+        --width=350
+
+    if [ -f "$OUTPUT" ]; then
         zenity --info \
             --title="Fertig!" \
             --text="PDF erfolgreich erstellt:\n<b>$OUTPUT</b>" \
@@ -179,31 +255,67 @@ advanced_merge() {
     if [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" = "original" ]; then
         # Keine Anpassung – direkt kopieren
         cp "$MERGED" "$OUTPUT"
-    else
-        # Ghostscript-Parameter zusammenbauen
-        GS_ARGS=(-dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite)
+    elif [ "$SIZE_OPT" = "a4" ] && [ "$ORIENT_OPT" = "original" ]; then
+        # A4 + Original-Ausrichtung: jede Seite einzeln verarbeiten,
+        # damit Querformat-Seiten als A4-Querformat erhalten bleiben
+        PAGE_COUNT=$(pdftk "$MERGED" dump_data | grep "NumberOfPages" | awk '{print $2}')
+        A4_PAGES=()
 
-        # Größe
-        if [ "$SIZE_OPT" = "a4" ]; then
-            GS_ARGS+=(-dFIXEDMEDIA -dPDFFitPage)
-            if [ "$ORIENT_OPT" = "querformat" ]; then
-                GS_ARGS+=(-dDEVICEWIDTHPOINTS=841.89 -dDEVICEHEIGHTPOINTS=595.28)
+        (
+        for ((i=1; i<=PAGE_COUNT; i++)); do
+            PAGE_PDF="$TMPDIR/page_${i}.pdf"
+            PAGE_A4="$TMPDIR/page_${i}_a4.pdf"
+            pdftk "$MERGED" cat "$i" output "$PAGE_PDF"
+
+            # Seitenmaße und Rotation auslesen
+            PAGE_DATA=$(pdftk "$PAGE_PDF" dump_data)
+            W=$(echo "$PAGE_DATA" | grep "PageMediaDimensions" | head -1 | awk '{print $2}')
+            H=$(echo "$PAGE_DATA" | grep "PageMediaDimensions" | head -1 | awk '{print $3}')
+            ROT=$(echo "$PAGE_DATA" | grep "PageMediaRotation" | head -1 | awk '{print $2}')
+
+            # Bei Rotation 90°/270° sind Breite und Höhe vertauscht
+            if [ "$ROT" = "90" ] || [ "$ROT" = "270" ]; then
+                TEMP="$W"; W="$H"; H="$TEMP"
+            fi
+
+            # Querformat erkennen (effektive Breite > Höhe)
+            if (( $(echo "$W > $H" | bc -l) )); then
+                GS_W=841.89; GS_H=595.28
             else
-                GS_ARGS+=(-dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
+                GS_W=595.28; GS_H=841.89
             fi
-            if [ "$ORIENT_OPT" = "original" ]; then
-                GS_ARGS+=(-dAutoRotatePages=/None)
-            fi
-        fi
 
-        # Nur Ausrichtung ändern, keine Größenanpassung
-        if [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" != "original" ]; then
-            if [ "$ORIENT_OPT" = "hochformat" ]; then
-                GS_ARGS+=(-dAutoRotatePages=/All -dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
-            elif [ "$ORIENT_OPT" = "querformat" ]; then
-                GS_ARGS+=(-dAutoRotatePages=/All -dDEVICEWIDTHPOINTS=841.89 -dDEVICEHEIGHTPOINTS=595.28)
-            fi
-        fi
+            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite \
+               -dPDFFitPage -dFIXEDMEDIA -dAutoRotatePages=/None \
+               -dDEVICEWIDTHPOINTS="$GS_W" -dDEVICEHEIGHTPOINTS="$GS_H" \
+               -sOutputFile="$PAGE_A4" "$PAGE_PDF"
+
+            A4_PAGES+=("$PAGE_A4")
+            echo $(( i * 100 / PAGE_COUNT ))
+            echo "# Seite $i von $PAGE_COUNT wird auf A4 angepasst..."
+        done
+
+        pdftk "${A4_PAGES[@]}" cat output "$OUTPUT"
+        echo "100"
+        ) | zenity --progress \
+            --title="A4-Anpassung" \
+            --text="Seiten werden auf A4 angepasst..." \
+            --percentage=0 \
+            --auto-close \
+            --no-cancel \
+            --width=350
+    else
+        # Feste Ausrichtung (Hochformat/Querformat) – alle Seiten gleich
+        GS_ARGS=(-dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFFitPage -dFIXEDMEDIA)
+
+        case "$ORIENT_OPT" in
+            "hochformat")
+                GS_ARGS+=(-dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
+                ;;
+            "querformat")
+                GS_ARGS+=(-dDEVICEWIDTHPOINTS=841.89 -dDEVICEHEIGHTPOINTS=595.28)
+                ;;
+        esac
 
         gs "${GS_ARGS[@]}" -sOutputFile="$OUTPUT" "$MERGED"
     fi
