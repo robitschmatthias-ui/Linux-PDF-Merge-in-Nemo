@@ -2,11 +2,12 @@
 # install.sh – Installiert "PDF zusammenfügen" und alle Abhängigkeiten
 
 SCRIPT_NAME="PDF zusammenfügen.sh"
+ICON_NAME="pdf-merge-icon.svg"
 REAL_USER="${SUDO_USER:-$USER}"
 REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 INSTALL_DIR="$REAL_HOME/.local/bin"
+ICON_DIR="$REAL_HOME/.local/share/icons"
 NEMO_ACTIONS_DIR="$REAL_HOME/.local/share/nemo/actions"
-ACTION_FILE="pdf-zusammenfuegen.nemo_action"
 
 echo ""
 echo "=== PDF zusammenfügen – Installer ==="
@@ -15,8 +16,10 @@ echo "Dieses Skript führt folgende Schritte aus:"
 echo "  1. Prüft ob folgende Abhängigkeiten installiert sind:"
 echo "     libreoffice, pdftk, img2pdf, zenity, ghostscript, yad"
 echo "  2. Installiert fehlende Pakete automatisch (apt)"
-echo "  3. Kopiert das Skript nach $INSTALL_DIR/"
-echo "  4. Richtet die Nemo-Rechtsklick-Integration ein"
+echo "  3. Kopiert das Skript und Icon nach $INSTALL_DIR/"
+echo "  4. Richtet zwei Nemo-Rechtsklick-Einträge ein:"
+echo "     - PDF Quick Merge"
+echo "     - PDF Advanced Merge"
 echo ""
 
 # Prüfen ob als root ausgeführt
@@ -95,34 +98,61 @@ else
     echo "  Alle Abhängigkeiten sind bereits installiert."
 fi
 
-# ── Schritt 3: Skript installieren ────────────────────────────────────────────
+# ── Schritt 3: Skript und Icon installieren ──────────────────────────────────
 echo ""
 echo "→ Installiere Skript nach $INSTALL_DIR/ ..."
 sudo -u "$REAL_USER" mkdir -p "$INSTALL_DIR"
 cp "$SCRIPT_NAME" "$INSTALL_DIR/"
+cp "advanced_dialog.py" "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
+chmod +x "$INSTALL_DIR/advanced_dialog.py"
 chown "$REAL_USER:$REAL_USER" "$INSTALL_DIR/$SCRIPT_NAME"
+chown "$REAL_USER:$REAL_USER" "$INSTALL_DIR/advanced_dialog.py"
+
+echo "→ Installiere Icon nach $ICON_DIR/ ..."
+sudo -u "$REAL_USER" mkdir -p "$ICON_DIR"
+cp "$ICON_NAME" "$ICON_DIR/"
+chown "$REAL_USER:$REAL_USER" "$ICON_DIR/$ICON_NAME"
 
 # ── Schritt 4: Nemo-Integration einrichten ────────────────────────────────────
 echo "→ Richte Nemo-Rechtsklick-Integration ein..."
 sudo -u "$REAL_USER" mkdir -p "$NEMO_ACTIONS_DIR"
 
-cat > "$NEMO_ACTIONS_DIR/$ACTION_FILE" << EOF
+# Quick Merge
+cat > "$NEMO_ACTIONS_DIR/pdf-quick-merge.nemo_action" << EOF
 [Nemo Action]
-Name=PDF zusammenfügen
-Comment=Dateien zu einem A4-PDF zusammenfügen
-Exec=bash "$INSTALL_DIR/$SCRIPT_NAME" %F
-Icon-Name=application-pdf
+Name=PDF Quick Merge
+Comment=Dateien direkt zu einem PDF zusammenfügen
+Exec=bash "$INSTALL_DIR/$SCRIPT_NAME" --quick %F
+Icon-Name=$ICON_DIR/$ICON_NAME
 Selection=Any
 Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
 EOF
+chown "$REAL_USER:$REAL_USER" "$NEMO_ACTIONS_DIR/pdf-quick-merge.nemo_action"
 
-chown "$REAL_USER:$REAL_USER" "$NEMO_ACTIONS_DIR/$ACTION_FILE"
+# Advanced Merge
+cat > "$NEMO_ACTIONS_DIR/pdf-advanced-merge.nemo_action" << EOF
+[Nemo Action]
+Name=PDF Advanced Merge
+Comment=Dateien mit Reihenfolge und Optionen zu einem PDF zusammenfügen
+Exec=bash "$INSTALL_DIR/$SCRIPT_NAME" --advanced %F
+Icon-Name=$ICON_DIR/$ICON_NAME
+Selection=Any
+Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
+EOF
+chown "$REAL_USER:$REAL_USER" "$NEMO_ACTIONS_DIR/pdf-advanced-merge.nemo_action"
+
+# Alte Action-Datei entfernen (falls von v1.0 vorhanden)
+rm -f "$NEMO_ACTIONS_DIR/pdf-zusammenfuegen.nemo_action"
 
 # ── Fertig ────────────────────────────────────────────────────────────────────
 echo ""
 echo "=== Installation erfolgreich abgeschlossen! ==="
 echo ""
-echo "Nemo neu starten um den Rechtsklick-Eintrag zu aktivieren:"
+echo "Nemo neu starten um die Rechtsklick-Einträge zu aktivieren:"
 echo "  nemo -q && nemo &"
+echo ""
+echo "Neue Rechtsklick-Einträge:"
+echo "  • PDF Quick Merge    – direkt zusammenfügen"
+echo "  • PDF Advanced Merge – Reihenfolge & Optionen"
 echo ""
