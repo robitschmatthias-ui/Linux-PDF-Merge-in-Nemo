@@ -181,24 +181,29 @@ advanced_merge() {
         cp "$MERGED" "$OUTPUT"
     else
         # Ghostscript-Parameter zusammenbauen
-        GS_ARGS=(-dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFFitPage)
+        GS_ARGS=(-dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite)
 
-        case "$ORIENT_OPT" in
-            "hochformat")
-                GS_ARGS+=(-dFIXEDMEDIA)
-                GS_ARGS+=(-dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
-                ;;
-            "querformat")
-                GS_ARGS+=(-dFIXEDMEDIA)
+        # Größe
+        if [ "$SIZE_OPT" = "a4" ]; then
+            GS_ARGS+=(-dFIXEDMEDIA -dPDFFitPage)
+            if [ "$ORIENT_OPT" = "querformat" ]; then
                 GS_ARGS+=(-dDEVICEWIDTHPOINTS=841.89 -dDEVICEHEIGHTPOINTS=595.28)
-                ;;
-            "original")
+            else
+                GS_ARGS+=(-dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
+            fi
+            if [ "$ORIENT_OPT" = "original" ]; then
                 GS_ARGS+=(-dAutoRotatePages=/None)
-                if [ "$SIZE_OPT" = "a4" ]; then
-                    GS_ARGS+=(-sPAPERSIZE=a4)
-                fi
-                ;;
-        esac
+            fi
+        fi
+
+        # Nur Ausrichtung ändern, keine Größenanpassung
+        if [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" != "original" ]; then
+            if [ "$ORIENT_OPT" = "hochformat" ]; then
+                GS_ARGS+=(-dAutoRotatePages=/All -dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89)
+            elif [ "$ORIENT_OPT" = "querformat" ]; then
+                GS_ARGS+=(-dAutoRotatePages=/All -dDEVICEWIDTHPOINTS=841.89 -dDEVICEHEIGHTPOINTS=595.28)
+            fi
+        fi
 
         gs "${GS_ARGS[@]}" -sOutputFile="$OUTPUT" "$MERGED"
     fi
