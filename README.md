@@ -34,12 +34,14 @@ Python 3 mit GTK3 (vorinstalliert auf Ubuntu/Linux Mint) wird für den Advanced-
 ## Installation
 
 ```bash
-git clone -b feature/v2-improvements https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
+git clone https://github.com/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo.git
 cd Linux-PDF-Merge-in-Nemo
+git checkout feature/v2-improvements
 sudo bash install.sh
+nemo -q && nemo &
 ```
 
-Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installiert nur die fehlenden Pakete. Nach der Installation erscheinen zwei Einträge im Rechtsklick-Menü von Nemo.
+Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installiert nur die fehlenden Pakete. Nach der Installation und dem Nemo-Neustart erscheinen zwei Einträge im Rechtsklick-Menü.
 
 ## Verwendung
 
