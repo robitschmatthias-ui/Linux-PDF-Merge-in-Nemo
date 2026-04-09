@@ -36,7 +36,7 @@ verarbeite_datei() {
         pdf)
             PDF_LIST+=("$FILE")
             ;;
-        doc|docx|odt|ods|odp|pptx|xlsx)
+        doc|docx|odt|ods|odp|pptx|xlsx|txt|rtf)
             COUNTER=$((COUNTER+1))
             BASENAME=$(basename "${FILE%.*}")
             LO_OUT="$TMPDIR/$BASENAME.pdf"

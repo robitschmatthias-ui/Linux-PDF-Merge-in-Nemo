@@ -126,7 +126,7 @@ Comment=Dateien direkt zu einem PDF zusammenfügen
 Exec=bash "$INSTALL_DIR/$SCRIPT_NAME" --quick %F
 Icon-Name=$ICON_DIR/$ICON_NAME
 Selection=Any
-Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
+Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;txt;rtf;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
 EOF
 chown "$REAL_USER:$REAL_USER" "$NEMO_ACTIONS_DIR/pdf-quick-merge.nemo_action"
 
@@ -138,7 +138,7 @@ Comment=Dateien mit Reihenfolge und Optionen zu einem PDF zusammenfügen
 Exec=bash "$INSTALL_DIR/$SCRIPT_NAME" --advanced %F
 Icon-Name=$ICON_DIR/$ICON_NAME
 Selection=Any
-Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
+Extensions=pdf;doc;docx;odt;ods;odp;pptx;xlsx;txt;rtf;jpg;jpeg;png;gif;tiff;tif;bmp;webp;
 EOF
 chown "$REAL_USER:$REAL_USER" "$NEMO_ACTIONS_DIR/pdf-advanced-merge.nemo_action"
 
