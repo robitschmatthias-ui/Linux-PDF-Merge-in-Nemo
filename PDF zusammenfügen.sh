@@ -304,8 +304,60 @@ advanced_merge() {
             --auto-close \
             --no-cancel \
             --width=350
+    elif [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" != "original" ]; then
+        # Original-Größe + feste Ausrichtung: jede Seite einzeln drehen
+        # (nur wenn Seite nicht bereits in gewünschter Ausrichtung ist)
+        PAGE_COUNT=$(pdftk "$MERGED" dump_data | grep "NumberOfPages" | awk '{print $2}')
+        ROTATED_PAGES=()
+
+        (
+        for ((i=1; i<=PAGE_COUNT; i++)); do
+            PAGE_PDF="$TMPDIR/page_${i}.pdf"
+            PAGE_OUT="$TMPDIR/page_${i}_rot.pdf"
+            pdftk "$MERGED" cat "$i" output "$PAGE_PDF"
+
+            # Seitenmaße und Rotation auslesen
+            PAGE_DATA=$(pdftk "$PAGE_PDF" dump_data)
+            W=$(echo "$PAGE_DATA" | grep "PageMediaDimensions" | head -1 | awk '{print $2}')
+            H=$(echo "$PAGE_DATA" | grep "PageMediaDimensions" | head -1 | awk '{print $3}')
+            ROT=$(echo "$PAGE_DATA" | grep "PageMediaRotation" | head -1 | awk '{print $2}')
+
+            # Bei Rotation 90°/270° sind Breite und Höhe effektiv vertauscht
+            if [ "$ROT" = "90" ] || [ "$ROT" = "270" ]; then
+                TEMP="$W"; W="$H"; H="$TEMP"
+            fi
+
+            # Aktuelle Orientierung feststellen
+            IS_LANDSCAPE=0
+            if (( $(echo "$W > $H" | bc -l) )); then
+                IS_LANDSCAPE=1
+            fi
+
+            # Drehen nur wenn aktuelle Ausrichtung nicht passt
+            if [ "$ORIENT_OPT" = "querformat" ] && [ "$IS_LANDSCAPE" = "0" ]; then
+                pdftk "$PAGE_PDF" cat 1east output "$PAGE_OUT"
+            elif [ "$ORIENT_OPT" = "hochformat" ] && [ "$IS_LANDSCAPE" = "1" ]; then
+                pdftk "$PAGE_PDF" cat 1east output "$PAGE_OUT"
+            else
+                cp "$PAGE_PDF" "$PAGE_OUT"
+            fi
+
+            ROTATED_PAGES+=("$PAGE_OUT")
+            echo $(( i * 100 / PAGE_COUNT ))
+            echo "# Seite $i von $PAGE_COUNT wird gedreht..."
+        done
+
+        pdftk "${ROTATED_PAGES[@]}" cat output "$OUTPUT"
+        echo "100"
+        ) | zenity --progress \
+            --title="Ausrichtung ändern" \
+            --text="Seiten werden gedreht..." \
+            --percentage=0 \
+            --auto-close \
+            --no-cancel \
+            --width=350
     else
-        # Feste Ausrichtung (Hochformat/Querformat) – alle Seiten gleich
+        # SIZE=a4 + feste Ausrichtung: alle Seiten auf A4 zwingen
         GS_ARGS=(-dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFFitPage -dFIXEDMEDIA)
 
         case "$ORIENT_OPT" in
