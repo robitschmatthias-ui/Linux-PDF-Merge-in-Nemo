@@ -24,65 +24,74 @@ fi
 # Gemeinsame Funktionen
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Verarbeitet eine einzelne Datei und aktualisiert PDF_LIST/ERRORS/COUNTER
+# Benötigt: TMPDIR, PDF_LIST, ERRORS, COUNTER im aufrufenden Scope
+verarbeite_datei() {
+    local FILE="$1"
+    local EXT_LOWER BASENAME LO_OUT CONVERTED FILETYPE
+
+    EXT_LOWER=$(echo "${FILE##*.}" | tr '[:upper:]' '[:lower:]')
+
+    case "$EXT_LOWER" in
+        pdf)
+            PDF_LIST+=("$FILE")
+            ;;
+        doc|docx|odt|ods|odp|pptx|xlsx)
+            COUNTER=$((COUNTER+1))
+            BASENAME=$(basename "${FILE%.*}")
+            LO_OUT="$TMPDIR/$BASENAME.pdf"
+            CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+            libreoffice --headless --convert-to pdf "$FILE" --outdir "$TMPDIR" 2>/dev/null
+            if [ -f "$LO_OUT" ]; then
+                mv "$LO_OUT" "$CONVERTED"
+                PDF_LIST+=("$CONVERTED")
+            else
+                ERRORS+=("$(basename "$FILE")")
+            fi
+            ;;
+        jpg|jpeg|png|gif|tiff|tif|bmp|webp)
+            COUNTER=$((COUNTER+1))
+            BASENAME=$(basename "${FILE%.*}")
+            CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+            img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+            if [ -f "$CONVERTED" ]; then
+                PDF_LIST+=("$CONVERTED")
+            else
+                ERRORS+=("$(basename "$FILE")")
+            fi
+            ;;
+        *)
+            FILETYPE=$(file --mime-type -b "$FILE")
+            case "$FILETYPE" in
+                image/jpeg|image/png|image/gif|image/tiff|image/bmp|image/webp)
+                    COUNTER=$((COUNTER+1))
+                    BASENAME=$(basename "$FILE")
+                    CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
+                    img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+                    if [ -f "$CONVERTED" ]; then
+                        PDF_LIST+=("$CONVERTED")
+                    else
+                        ERRORS+=("$(basename "$FILE")")
+                    fi
+                    ;;
+                application/pdf)
+                    PDF_LIST+=("$FILE")
+                    ;;
+                *)
+                    ERRORS+=("$(basename "$FILE") [nicht unterstützt: $FILETYPE]")
+                    ;;
+            esac
+            ;;
+    esac
+}
+
 konvertiere_dateien() {
     PDF_LIST=()
     ERRORS=()
     COUNTER=0
 
     for FILE in "${ORDERED_FILES[@]}"; do
-        EXT_LOWER=$(echo "${FILE##*.}" | tr '[:upper:]' '[:lower:]')
-
-        case "$EXT_LOWER" in
-            pdf)
-                PDF_LIST+=("$FILE")
-                ;;
-            doc|docx|odt|ods|odp|pptx|xlsx)
-                COUNTER=$((COUNTER+1))
-                BASENAME=$(basename "${FILE%.*}")
-                LO_OUT="$TMPDIR/$BASENAME.pdf"
-                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                libreoffice --headless --convert-to pdf "$FILE" --outdir "$TMPDIR" 2>/dev/null
-                if [ -f "$LO_OUT" ]; then
-                    mv "$LO_OUT" "$CONVERTED"
-                    PDF_LIST+=("$CONVERTED")
-                else
-                    ERRORS+=("$(basename "$FILE")")
-                fi
-                ;;
-            jpg|jpeg|png|gif|tiff|tif|bmp|webp)
-                COUNTER=$((COUNTER+1))
-                BASENAME=$(basename "${FILE%.*}")
-                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
-                if [ -f "$CONVERTED" ]; then
-                    PDF_LIST+=("$CONVERTED")
-                else
-                    ERRORS+=("$(basename "$FILE")")
-                fi
-                ;;
-            *)
-                FILETYPE=$(file --mime-type -b "$FILE")
-                case "$FILETYPE" in
-                    image/jpeg|image/png|image/gif|image/tiff|image/bmp|image/webp)
-                        COUNTER=$((COUNTER+1))
-                        BASENAME=$(basename "$FILE")
-                        CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                        img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
-                        if [ -f "$CONVERTED" ]; then
-                            PDF_LIST+=("$CONVERTED")
-                        else
-                            ERRORS+=("$(basename "$FILE")")
-                        fi
-                        ;;
-                    application/pdf)
-                        PDF_LIST+=("$FILE")
-                        ;;
-                    *)
-                        ERRORS+=("$(basename "$FILE") [nicht unterstützt: $FILETYPE]")
-                        ;;
-                esac
-                ;;
-        esac
+        verarbeite_datei "$FILE"
     done
 
     if [ ${#ERRORS[@]} -gt 0 ]; then
@@ -129,6 +138,9 @@ quick_merge() {
     speicherort_waehlen
 
     TOTAL=${#ORDERED_FILES[@]}
+    ERRORS_FILE="$TMPDIR/errors.txt"
+    PDFTK_LOG="$TMPDIR/pdftk.log"
+
     (
     PDF_LIST=()
     ERRORS=()
@@ -139,66 +151,21 @@ quick_merge() {
         CURRENT=$((IDX + 1))
         echo $(( CURRENT * 90 / TOTAL ))
         echo "# Datei $CURRENT von $TOTAL: $(basename "$FILE")"
-
-        EXT_LOWER=$(echo "${FILE##*.}" | tr '[:upper:]' '[:lower:]')
-        case "$EXT_LOWER" in
-            pdf)
-                PDF_LIST+=("$FILE")
-                ;;
-            doc|docx|odt|ods|odp|pptx|xlsx)
-                COUNTER=$((COUNTER+1))
-                BASENAME=$(basename "${FILE%.*}")
-                LO_OUT="$TMPDIR/$BASENAME.pdf"
-                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                libreoffice --headless --convert-to pdf "$FILE" --outdir "$TMPDIR" 2>/dev/null
-                if [ -f "$LO_OUT" ]; then
-                    mv "$LO_OUT" "$CONVERTED"
-                    PDF_LIST+=("$CONVERTED")
-                else
-                    ERRORS+=("$(basename "$FILE")")
-                fi
-                ;;
-            jpg|jpeg|png|gif|tiff|tif|bmp|webp)
-                COUNTER=$((COUNTER+1))
-                BASENAME=$(basename "${FILE%.*}")
-                CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
-                if [ -f "$CONVERTED" ]; then
-                    PDF_LIST+=("$CONVERTED")
-                else
-                    ERRORS+=("$(basename "$FILE")")
-                fi
-                ;;
-            *)
-                FILETYPE=$(file --mime-type -b "$FILE")
-                case "$FILETYPE" in
-                    image/jpeg|image/png|image/gif|image/tiff|image/bmp|image/webp)
-                        COUNTER=$((COUNTER+1))
-                        BASENAME=$(basename "$FILE")
-                        CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                        img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
-                        if [ -f "$CONVERTED" ]; then
-                            PDF_LIST+=("$CONVERTED")
-                        else
-                            ERRORS+=("$(basename "$FILE")")
-                        fi
-                        ;;
-                    application/pdf)
-                        PDF_LIST+=("$FILE")
-                        ;;
-                    *)
-                        ERRORS+=("$(basename "$FILE") [nicht unterstützt: $FILETYPE]")
-                        ;;
-                esac
-                ;;
-        esac
+        verarbeite_datei "$FILE"
     done
+
+    # Fehler an Datei weitergeben (Subshell-Variablen gehen sonst verloren)
+    if [ ${#ERRORS[@]} -gt 0 ]; then
+        printf '%s\n' "${ERRORS[@]}" > "$ERRORS_FILE"
+    fi
 
     echo "95"
     echo "# PDF wird zusammengefügt..."
 
     if [ ${#PDF_LIST[@]} -gt 0 ]; then
-        pdftk "${PDF_LIST[@]}" cat output "$OUTPUT"
+        pdftk "${PDF_LIST[@]}" cat output "$OUTPUT" 2> "$PDFTK_LOG"
+    else
+        echo "Keine verwertbaren Dateien gefunden." > "$PDFTK_LOG"
     fi
     echo "100"
     ) | zenity --progress \
@@ -209,13 +176,32 @@ quick_merge() {
         --no-cancel \
         --width=350
 
+    # Ergebnis auswerten – außerhalb der Subshell, damit Fehler sichtbar sind
+    ERROR_CONTENT=""
+    [ -s "$ERRORS_FILE" ] && ERROR_CONTENT=$(cat "$ERRORS_FILE")
+
     if [ -f "$OUTPUT" ]; then
-        zenity --info \
-            --title="Fertig!" \
-            --text="PDF erfolgreich erstellt:\n<b>$OUTPUT</b>" \
-            --width=400
+        if [ -n "$ERROR_CONTENT" ]; then
+            zenity --warning \
+                --title="Teilweise erfolgreich" \
+                --text="PDF wurde erstellt, aber folgende Dateien konnten nicht konvertiert werden:\n\n$ERROR_CONTENT\n\nGespeichert als:\n<b>$OUTPUT</b>" \
+                --width=450
+        else
+            zenity --info \
+                --title="Fertig!" \
+                --text="PDF erfolgreich erstellt:\n<b>$OUTPUT</b>" \
+                --width=400
+        fi
     else
-        zenity --error --title="Fehler" --text="PDF konnte nicht erstellt werden."
+        PDFTK_ERR=""
+        [ -s "$PDFTK_LOG" ] && PDFTK_ERR=$(cat "$PDFTK_LOG")
+        FEHLER_TEXT="PDF konnte nicht erstellt werden."
+        [ -n "$ERROR_CONTENT" ] && FEHLER_TEXT="$FEHLER_TEXT\n\nFehlgeschlagene Dateien:\n$ERROR_CONTENT"
+        [ -n "$PDFTK_ERR" ]     && FEHLER_TEXT="$FEHLER_TEXT\n\nDetails:\n$PDFTK_ERR"
+        zenity --error \
+            --title="Fehler" \
+            --text="$FEHLER_TEXT" \
+            --width=450
     fi
 
     rm -rf "$TMPDIR"
@@ -372,14 +358,19 @@ advanced_merge() {
         gs "${GS_ARGS[@]}" -sOutputFile="$OUTPUT" "$MERGED"
     fi
 
-    if [ $? -eq 0 ]; then
+    # Erfolg prüfen: Output-Datei muss existieren und nicht leer sein
+    # ($? ist nach einer Pipe zu zenity unbrauchbar)
+    if [ -s "$OUTPUT" ]; then
         zenity --info \
             --title="Fertig!" \
             --text="PDF erfolgreich erstellt:\n<b>$OUTPUT</b>" \
             --width=400
         [ "$OPEN_AFTER" = "yes" ] && xdg-open "$OUTPUT" &
     else
-        zenity --error --title="Fehler" --text="PDF konnte nicht erstellt werden."
+        zenity --error \
+            --title="Fehler" \
+            --text="PDF konnte nicht erstellt werden.\n\nDie Nachbearbeitung (Größe/Ausrichtung) ist fehlgeschlagen." \
+            --width=450
     fi
 
     rm -rf "$TMPDIR"
