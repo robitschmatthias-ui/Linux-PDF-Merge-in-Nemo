@@ -71,6 +71,18 @@ Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installie
 
 > Tipp: Mit „PDF Arranger" (separat installierbar) können einzelne Seiten nachträglich gedreht oder verschoben werden.
 
+## Bekannte Einschränkungen
+
+### Digitale Signaturen in PDF-Dateien
+
+Beim Zusammenfügen von PDFs, die digitale Signaturen enthalten, bleiben die Signatur-Objekte physisch in der Ausgabedatei erhalten. Da der Merge-Vorgang den Dateiinhalt verändert, ist der kryptografische Hash der ursprünglichen Signatur jedoch nicht mehr gültig. PDF-Viewer wie Adobe Acrobat werden eine solche Signatur als **ungültig** oder **verändert** kennzeichnen. Wer die Gültigkeit einer digitalen Signatur benötigt, sollte die betreffende PDF nicht zusammenführen.
+
+### Word-Dokumente (DOCX, DOC)
+
+Word-Dokumente werden intern über LibreOffice im Headless-Modus in PDF konvertiert, bevor sie zusammengeführt werden. LibreOffice ist nicht vollständig kompatibel mit dem Microsoft Word Format. Dabei können **Seitenumbrüche, Schriftarten, Spalten-Layouts und komplexe Tabellen** vom Original abweichen.
+
+**Empfehlung:** Word-Dokumente mit layout-kritischen Inhalten vorab manuell in PDF exportieren (z.B. über Microsoft Word oder einen anderen kompatiblen Editor) und die fertige PDF-Datei anschließend mit diesem Tool zusammenfügen.
+
 ## Deinstallation
 
 ```bash
