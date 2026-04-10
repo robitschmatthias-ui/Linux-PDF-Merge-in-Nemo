@@ -1,5 +1,11 @@
 # PDF Merge in Nemo
 
+![Platform](https://img.shields.io/badge/platform-Linux-blue)
+![Shell](https://img.shields.io/badge/shell-bash-green)
+![File Manager](https://img.shields.io/badge/file--manager-Nemo-orange)
+![License](https://img.shields.io/badge/license-GPL%20v3-blue)
+![Stars](https://img.shields.io/github/stars/robitschmatthias-ui/Linux-PDF-Merge-in-Nemo?style=social)
+
 Bash-Skripte zum Zusammenfügen von Dateien zu PDF direkt aus dem Nemo-Dateimanager (Linux Mint / Ubuntu).
 
 ---
@@ -80,7 +86,7 @@ nemo -q && nemo &
 
 ## Lizenz
 
-MIT License – frei verwendbar, veränderbar und weitergebbar.
+Dieses Projekt steht unter der [GNU General Public License v3.0](LICENSE) – Änderungen müssen ebenfalls Open Source bleiben.
 
 ## Hinweis
 
