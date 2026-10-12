@@ -19,3 +19,4 @@ Der [PDF-OCR-Converter](https://github.com/robitschmatthias-ui/PDF-OCR-Converter
 - pdftk-Drehung immer **relativ** (`right`), nie absolut (`east`) – sonst bleiben Seiten mit bestehender `/Rotate` ungedreht.
 - LibreOffice immer über `lo_konvertieren` aufrufen (eigenes Profil per `-env:UserInstallation`), sonst schlägt die Konvertierung fehl, wenn LibreOffice offen ist.
 - Texte in zenity-Dialogen sind Pango-Markup: dynamische Inhalte (Dateinamen, Fehlertexte) durch `esc` schicken.
+- Advanced Merge schreibt nie direkt nach `$OUTPUT`: alle Varianten erzeugen `$FINAL`, das erst bei Erfolg neben das Ziel kopiert und atomar umbenannt wird.

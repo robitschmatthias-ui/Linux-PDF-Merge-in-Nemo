@@ -430,9 +430,13 @@ advanced_merge() {
     zusammenfuegen
 
     # ── Nachbearbeitung je nach Optionen ─────────────────────────────────────
+    # Alle Varianten schreiben zuerst nach $FINAL. Erst wenn das geklappt hat,
+    # wird das Ziel ersetzt – eine beim Speichern zum Überschreiben gewählte
+    # Datei bleibt bei einem Fehler unverändert und wird nicht als Erfolg gemeldet.
+    FINAL="$TMPDIR/final.pdf"
     if [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" = "original" ]; then
         # Keine Anpassung – direkt kopieren
-        cp "$MERGED" "$OUTPUT"
+        cp "$MERGED" "$FINAL"
     elif [ "$SIZE_OPT" = "a4" ] && [ "$ORIENT_OPT" = "original" ]; then
         # A4 + Original-Ausrichtung: jede Seite einzeln verarbeiten,
         # damit Querformat-Seiten als A4-Querformat erhalten bleiben
@@ -473,7 +477,7 @@ advanced_merge() {
             echo "# Seite $i von $PAGE_COUNT wird auf A4 angepasst..."
         done
 
-        pdftk "${A4_PAGES[@]}" cat output "$OUTPUT"
+        pdftk "${A4_PAGES[@]}" cat output "$FINAL"
         echo "100"
         ) | zenity --progress \
             --title="A4-Anpassung" \
@@ -484,7 +488,7 @@ advanced_merge() {
             --width=350
     elif [ "$SIZE_OPT" = "original" ] && [ "$ORIENT_OPT" != "original" ]; then
         # Original-Größe + feste Ausrichtung: nur drehen
-        seiten_ausrichten "$MERGED" "$OUTPUT"
+        seiten_ausrichten "$MERGED" "$FINAL"
     else
         # A4 + feste Ausrichtung: erst falsch ausgerichtete Seiten drehen,
         # dann alle Seiten auf A4 in der gewünschten Ausrichtung einpassen
@@ -502,22 +506,34 @@ advanced_merge() {
                 ;;
         esac
 
-        [ -s "$ROTATED" ] && gs "${GS_ARGS[@]}" -sOutputFile="$OUTPUT" "$ROTATED"
+        [ -s "$ROTATED" ] && gs "${GS_ARGS[@]}" -sOutputFile="$FINAL" "$ROTATED"
     fi
 
-    # Erfolg prüfen: Output-Datei muss existieren und nicht leer sein
+    # Erfolg prüfen: Ergebnis muss existieren und nicht leer sein
     # ($? ist nach einer Pipe zu zenity unbrauchbar)
-    if [ -s "$OUTPUT" ]; then
+    local UNVERAENDERT="" TARGET_TMP
+    TARGET_TMP="$(dirname "$OUTPUT")/.$(basename "$OUTPUT").tmp"
+    [ -e "$OUTPUT" ] && UNVERAENDERT="\n\nDie vorhandene Datei wurde nicht verändert:\n<b>$(esc "$OUTPUT")</b>"
+
+    if [ ! -s "$FINAL" ]; then
+        zenity --error \
+            --title="Fehler" \
+            --text="PDF konnte nicht erstellt werden.\n\nDie Nachbearbeitung (Größe/Ausrichtung) ist fehlgeschlagen.$UNVERAENDERT" \
+            --width=450
+    elif ! SAVE_ERR=$( { cp -f "$FINAL" "$TARGET_TMP" && mv -f "$TARGET_TMP" "$OUTPUT"; } 2>&1 ); then
+        # Erst neben das Ziel kopieren, dann umbenennen: Das Umbenennen im selben
+        # Dateisystem ist atomar, ein Abbruch beim Kopieren trifft nur die Hilfsdatei
+        rm -f "$TARGET_TMP"
+        zenity --error \
+            --title="Fehler" \
+            --text="PDF konnte nicht gespeichert werden.\n\nDetails:\n$(esc "$SAVE_ERR")$UNVERAENDERT" \
+            --width=450
+    else
         zenity --info \
             --title="Fertig!" \
             --text="PDF erfolgreich erstellt:\n<b>$(esc "$OUTPUT")</b>" \
             --width=400
         [ "$OPEN_AFTER" = "yes" ] && xdg-open "$OUTPUT" &
-    else
-        zenity --error \
-            --title="Fehler" \
-            --text="PDF konnte nicht erstellt werden.\n\nDie Nachbearbeitung (Größe/Ausrichtung) ist fehlgeschlagen." \
-            --width=450
     fi
 
     rm -rf "$TMPDIR"
