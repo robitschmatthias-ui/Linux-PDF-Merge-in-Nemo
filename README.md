@@ -18,7 +18,7 @@ Bash-Skripte zum Zusammenfügen von Dateien zu PDF direkt aus dem Nemo-Dateimana
   - **Als PDF konvertieren** – jede markierte Datei einzeln als eigenes PDF im selben Ordner (Bilder werden auf A4 angepasst). Kein Zusammenführen
 - **Unterstützte Formate:** PDF, Bilder (JPG, PNG, TIFF, BMP, WebP, GIF), Office-Dokumente (ODT, ODS, ODP, DOCX, XLSX, PPTX, DOC), Text (TXT, RTF)
 - **A4-Anpassung** (Advanced) – große Seiten werden auf A4 verkleinert (300 DPI), kleine Bilder unter 200 DPI bleiben in Originalgröße und werden zentriert
-- **Ausrichtung** (Advanced) – Original beibehalten, Hochformat oder Querformat erzwingen
+- **Ausrichtung** (Advanced) – Original beibehalten, Hochformat oder Querformat erzwingen (falsch ausgerichtete Seiten werden um 90° gedreht – auch in Kombination mit A4)
 - **PDF nach Merge öffnen** (Advanced) – optionale Checkbox um das Ergebnis direkt im Standard-PDF-Programm zu bearbeiten
 - **Eigenes Icon** – blaues PDF-Merge-Icon im Kontextmenü
 - **Automatischer Installer** – prüft und installiert alle Abhängigkeiten
@@ -33,10 +33,12 @@ Das Installationsskript kümmert sich um alles. Folgende Pakete werden automatis
 | `pdftk` | Zusammenfügen der PDF-Dateien |
 | `img2pdf` | Konvertierung von Bildern |
 | `zenity` | GUI-Dialoge |
-| `yad` | Erweiterte Dialoge |
 | `ghostscript` | Seitengrößen-Anpassung und Ausrichtung |
+| `bc` | Berechnung der Seitenmaße |
+| `file` | Dateityp-Erkennung bei Dateien ohne Endung |
+| `python3-gi`, `gir1.2-gtk-3.0` | GTK3-Dialog für Advanced Merge |
 
-Python 3 mit GTK3 (vorinstalliert auf Ubuntu/Linux Mint) wird für den Advanced-Dialog verwendet.
+Office-Dokumente werden auch dann konvertiert, wenn LibreOffice gerade geöffnet ist (jeder Lauf nutzt ein eigenes temporäres LibreOffice-Profil).
 
 ### Schriftarten für DOCX-Konvertierung (empfohlen)
 
@@ -97,6 +99,8 @@ Der Installer prüft welche Abhängigkeiten bereits vorhanden sind und installie
 3. Fertig – jede Datei wird als eigenes PDF im selben Ordner gespeichert (`bild.png` → `bild.pdf`)
 
 Bilder werden dabei auf A4 angepasst (Hoch- oder Querformat je nach Bild). Bereits vorhandene PDF-Dateien werden übersprungen.
+
+Existiert die Ziel-PDF schon, wird nichts überschrieben: Das Ergebnis wird als `bericht (2).pdf`, `bericht (3).pdf` … gespeichert und in der Abschlussmeldung aufgeführt.
 
 ## Bekannte Einschränkungen
 

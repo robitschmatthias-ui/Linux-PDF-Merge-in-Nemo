@@ -14,7 +14,8 @@ echo "=== PDF zusammenfügen – Installer ==="
 echo ""
 echo "Dieses Skript führt folgende Schritte aus:"
 echo "  1. Prüft ob folgende Abhängigkeiten installiert sind:"
-echo "     libreoffice, pdftk, img2pdf, zenity, ghostscript, yad"
+echo "     libreoffice, pdftk, img2pdf, zenity, ghostscript, bc, file,"
+echo "     python3 mit GTK3 (python3-gi, gir1.2-gtk-3.0)"
 echo "  2. Installiert fehlende Pakete automatisch (apt)"
 echo "  3. Kopiert das Skript und Icon nach $INSTALL_DIR/"
 echo "  4. Richtet drei Nemo-Rechtsklick-Einträge ein:"
@@ -48,7 +49,7 @@ echo ""
 # ── Schritt 1: Abhängigkeiten prüfen ─────────────────────────────────────────
 echo "→ Prüfe Abhängigkeiten..."
 NEEDED=()
-for CMD in libreoffice pdftk img2pdf zenity gs yad; do
+for CMD in libreoffice pdftk img2pdf zenity gs bc file python3; do
     if command -v "$CMD" &>/dev/null; then
         echo "  ✓ $CMD – bereits installiert"
     elif [ "$CMD" = "libreoffice" ]; then
@@ -69,16 +70,24 @@ for CMD in libreoffice pdftk img2pdf zenity gs yad; do
     fi
 done
 
+# GTK3-Anbindung für den Advanced-Dialog (kein eigenes Kommando, daher per Import prüfen)
+if python3 -c "import gi; gi.require_version('Gtk', '3.0')" &>/dev/null; then
+    echo "  ✓ python3-gi (GTK3) – bereits installiert"
+else
+    echo "  ✗ python3-gi (GTK3) – fehlt"
+    NEEDED+=("python3-gi")
+fi
+
 # ── Schritt 2: Fehlende Pakete installieren ───────────────────────────────────
 if [ ${#NEEDED[@]} -gt 0 ]; then
     # gs → ghostscript im Paketnamen
     PACKAGES=()
     for CMD in "${NEEDED[@]}"; do
-        if [ "$CMD" = "gs" ]; then
-            PACKAGES+=("ghostscript")
-        else
-            PACKAGES+=("$CMD")
-        fi
+        case "$CMD" in
+            gs)         PACKAGES+=("ghostscript") ;;
+            python3-gi) PACKAGES+=("python3-gi" "gir1.2-gtk-3.0") ;;
+            *)          PACKAGES+=("$CMD") ;;
+        esac
     done
 
     echo ""
@@ -91,7 +100,14 @@ if [ ${#NEEDED[@]} -gt 0 ]; then
     echo "→ Prüfe Installation..."
     FAILED=()
     for CMD in "${NEEDED[@]}"; do
-        if command -v "$CMD" &>/dev/null; then
+        if [ "$CMD" = "python3-gi" ]; then
+            if python3 -c "import gi; gi.require_version('Gtk', '3.0')" &>/dev/null; then
+                echo "  ✓ $CMD"
+            else
+                echo "  ✗ $CMD – Installation fehlgeschlagen"
+                FAILED+=("$CMD")
+            fi
+        elif command -v "$CMD" &>/dev/null; then
             echo "  ✓ $CMD"
         else
             echo "  ✗ $CMD – Installation fehlgeschlagen"
