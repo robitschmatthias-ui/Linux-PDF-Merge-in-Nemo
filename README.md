@@ -17,7 +17,7 @@ Bash-Skripte zum Zusammenfügen von Dateien zu PDF direkt aus dem Nemo-Dateimana
   - **PDF Advanced Merge** – Reihenfolge per Drag & Drop festlegen, Seitengröße und Ausrichtung wählen. Vorgeschlagener Dateiname = Name der obersten Datei in der Liste
   - **Als PDF konvertieren** – jede markierte Datei einzeln als eigenes PDF im selben Ordner (Bilder werden auf A4 angepasst). Kein Zusammenführen
 - **Unterstützte Formate:** PDF, Bilder (JPG, PNG, TIFF, BMP, WebP, GIF), Office-Dokumente (ODT, ODS, ODP, DOCX, XLSX, PPTX, DOC), Text (TXT, RTF)
-- **A4-Anpassung** (Advanced) – große Seiten werden auf A4 verkleinert (300 DPI), kleine Bilder unter 200 DPI bleiben in Originalgröße und werden zentriert
+- **A4-Anpassung** (Advanced) – PDF- und Office-Seiten werden auf A4 skaliert und zentriert. Bilder, die auf A4 mindestens 200 DPI erreichen, füllen die Seite; kleinere Bilder bleiben in Originalgröße zentriert, statt verpixelt aufgeblasen zu werden
 - **Ausrichtung** (Advanced) – Original beibehalten, Hochformat oder Querformat erzwingen (falsch ausgerichtete Seiten werden um 90° gedreht – auch in Kombination mit A4)
 - **PDF nach Merge öffnen** (Advanced) – optionale Checkbox um das Ergebnis direkt im Standard-PDF-Programm zu bearbeiten
 - **Eigenes Icon** – blaues PDF-Merge-Icon im Kontextmenü

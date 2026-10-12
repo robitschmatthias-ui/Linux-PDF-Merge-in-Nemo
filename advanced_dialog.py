@@ -93,10 +93,12 @@ class AdvancedMergeDialog(Gtk.Window):
         )
         self.radio_a4.set_tooltip_text(
             "Seiten werden auf A4-Format skaliert.\n\n"
-            "• Große Seiten → auf A4 verkleinert (300 DPI)\n"
-            "• Bilder ab 200 DPI auf A4 → hochskaliert\n"
-            "• Bilder unter 200 DPI → Originalgröße,\n"
-            "  zentriert auf A4-Seite"
+            "• PDF- und Office-Seiten → auf A4 skaliert\n"
+            "  und zentriert\n"
+            "• Bilder, die auf A4 mindestens 200 DPI haben\n"
+            "  → füllen die A4-Seite\n"
+            "• Kleinere Bilder → Originalgröße, zentriert\n"
+            "  (nur verkleinert, falls größer als A4)"
         )
 
         box_size.pack_start(self.radio_no_resize, False, False, 0)

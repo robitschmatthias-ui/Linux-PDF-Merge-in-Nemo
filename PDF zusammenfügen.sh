@@ -1,5 +1,5 @@
 #!/bin/bash
-# Abhängigkeiten: libreoffice, pdftk, img2pdf, zenity, ghostscript, bc, file, python3-gi
+# Abhängigkeiten: libreoffice, pdftk, img2pdf (inkl. python3-pil), zenity, ghostscript, bc, file, python3-gi
 # Installation: sudo bash install.sh
 
 MODE="$1"
@@ -55,6 +55,37 @@ freier_pdf_name() {
     printf '%s' "$KANDIDAT"
 }
 
+# Bild ($1) für Advanced "Auf A4 anpassen" direkt als A4-Seite ($2) anlegen:
+# - erreicht das Bild auf voller A4-Fläche mindestens 200 DPI, füllt es die Seite
+#   (wird also auch vergrößert)
+# - darunter bleibt es in Originalgröße zentriert (nur verkleinert, falls es
+#   größer als A4 ist) – kleine Bilder würden sonst grob verpixelt aufgeblasen
+# Hoch-/Querformat der Seite richtet sich nach dem Bild.
+bild_auf_a4() {
+    local IN="$1" OUT="$2" FIT
+    FIT=$(python3 - "$IN" 2>/dev/null <<'PY'
+import sys
+from PIL import Image
+with Image.open(sys.argv[1]) as im:
+    w, h = im.size
+# DPI, die das Bild hätte, wenn es A4 (297 x 210 mm) ausfüllt
+dpi = min(max(w, h) / (297 / 25.4), min(w, h) / (210 / 25.4))
+print("into" if dpi >= 200 else "shrink")
+PY
+)
+    [ -z "$FIT" ] && FIT="into"
+    img2pdf "$IN" --pagesize A4 --auto-orient --fit "$FIT" -o "$OUT" 2>/dev/null
+}
+
+# Bild ($1) für den Merge nach $2: bei A4-Anpassung als A4-Seite, sonst in Bildgröße
+bild_fuer_merge() {
+    if [ "$SIZE_OPT" = "a4" ]; then
+        bild_auf_a4 "$1" "$2"
+    else
+        img2pdf "$1" -o "$2" 2>/dev/null
+    fi
+}
+
 # Verarbeitet eine einzelne Datei und aktualisiert PDF_LIST/ERRORS/COUNTER
 # Benötigt: TMPDIR, PDF_LIST, ERRORS, COUNTER im aufrufenden Scope
 verarbeite_datei() {
@@ -88,7 +119,7 @@ verarbeite_datei() {
             COUNTER=$((COUNTER+1))
             BASENAME=$(basename "${FILE%.*}")
             CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-            img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+            bild_fuer_merge "$FILE" "$CONVERTED"
             if [ -f "$CONVERTED" ]; then
                 PDF_LIST+=("$CONVERTED")
             else
@@ -102,7 +133,7 @@ verarbeite_datei() {
                     COUNTER=$((COUNTER+1))
                     BASENAME=$(basename "$FILE")
                     CONVERTED="$TMPDIR/${COUNTER}_$BASENAME.pdf"
-                    img2pdf "$FILE" -o "$CONVERTED" 2>/dev/null
+                    bild_fuer_merge "$FILE" "$CONVERTED"
                     if [ -f "$CONVERTED" ]; then
                         PDF_LIST+=("$CONVERTED")
                     else
